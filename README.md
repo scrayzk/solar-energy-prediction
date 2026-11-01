@@ -3,7 +3,7 @@
 **Course:** CS 316 – Introduction to AI and Data Science (Section 1282)
 **Group members:** Rumah Juweria, Ruqayyah Raja, Rayhana Basha
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR-USERNAME/YOUR-REPO/blob/main/solar_energy_prediction.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Yscrayzk/solar-energy-prediction/blob/main/solar_energy_prediction.ipynb)
 
 ## Project overview
 
@@ -36,15 +36,15 @@ No external meteorological data was used.
 ### Option A: Google Colab (recommended)
 
 1. Click the **Open in Colab** badge at the top of this README (or open `solar_energy_prediction.ipynb` and choose *Open in Colab*).
-2. In the data-loading cell, make sure `YOUR-USERNAME/YOUR-REPO` in the `git clone` line is this repository's address. This downloads the code and the `data/` folder into Colab automatically.
+2. In the data-loading cell, make sure `scrayzk/solar-energy-prediction` in the `git clone` line is this repository's address. This downloads the code and the `data/` folder into Colab automatically.
 3. Run all cells: **Runtime → Run all**. The notebook takes about a minute to run.
 
 ### Option B: Run locally
 
 1. Clone the repository:
    ```
-   git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
-   cd YOUR-REPO
+   git clone https://github.com/scrayzk/solar-energy-prediction.git
+   cd solar-energy-prediction
    ```
 2. Install the libraries (Python 3.9+ recommended):
    ```
