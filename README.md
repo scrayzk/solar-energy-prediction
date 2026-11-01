@@ -72,7 +72,7 @@ No external meteorological data was used.
 |---|---|---|---|
 | **Random Forest** | **35.1** | **77.9** | **0.935** |
 | Decision Tree | 37.5 | 85.4 | 0.922 |
-| Linear Regression | 98.0 | 125.8 | 0.831 |
+| Linear Regression | 97.96 | 125.8 | 0.831 |
 
 - The **Random Forest** performed best on all three metrics.
 - **Irradiation** is the main driver of solar output (correlation with AC power r = 0.91). Module temperature and temperature difference are also highly correlated with power, but largely because they rise with sunlight.
