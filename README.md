@@ -3,7 +3,7 @@
 **Course:** CS 316 – Introduction to AI and Data Science (Section 1282)
 **Group members:** Rumah Juweria, Ruqayyah Raja, Rayhana Basha
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/scrayzk/solar-energy-prediction/blob/main/solar_energy_prediction_316.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/scrayzk/solar-energy-prediction/blob/main/solar_energy_prediction.ipynb)
 
 ## Project overview
 
