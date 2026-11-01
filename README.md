@@ -1,152 +1,67 @@
-#1. Imports
-#seaborn draws the charts (matplotlib is installed with it and only used to show them). scikit-learn provides the models and #metrics. 
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+Solar Energy Production Prediction
 
-from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+Course: CS 316 – Introduction to AI and Data Science (Section 1282) Group members: Rumah Juweria, Ruqayyah Raja, Rayhana Basha
 
-sns.set_style(style="whitegrid")
+Open In Colab
 
-from google.colab import files
-uploaded = files.upload()
+Project overview
 
-gen1 = pd.read_csv("Plant_1_Generation_Data.csv")
-gen2 = pd.read_csv("Plant_2_Generation_Data.csv")
-w1 = pd.read_csv("Plant_1_Weather_Sensor_Data.csv")
-w2 = pd.read_csv("Plant_2_Weather_Sensor_Data.csv")
+Solar power output fluctuates with weather conditions, which complicates grid planning and increases reliance on fossil-fuel backup generation. This project builds a supervised regression pipeline that predicts solar power generation (AC power) from weather measurements. We merge and clean generation and weather data from two solar plants, explore the relationships between weather and power, engineer features, and compare three regression models using MAE, RMSE and R².
 
-gen1["DATE_TIME"] = pd.to_datetime(gen1["DATE_TIME"], format="%d-%m-%Y %H:%M")
-for df in (gen2, w1, w2):
-    df["DATE_TIME"] = pd.to_datetime(df["DATE_TIME"])
+Dataset
 
-gen1.head()
-#w1.head()
+Solar Power Generation Data (Kaggle): 34 days (15 May – 17 June 2020) of 15-minute interval data from two grid-connected solar plants in India. Each plant has:
 
-sns.histplot(gen1["AC_POWER"])
+a generation file with inverter-level DC/AC power and yield (22 inverters per plant)
+a weather sensor file with ambient temperature, module temperature and irradiation
 
-gen = pd.concat([gen1, gen2], ignore_index=True)
-weather = pd.concat([w1, w2], ignore_index=True)
+No external meteorological data was used.
 
-print("Missing values in generation data:\n", gen.isna().sum(), "\n")
-print("Missing values in weather data:\n", weather.isna().sum(), "\n")
+Repository structure
+├── solar_energy_prediction.ipynb     # Main notebook (all code, comments and outputs)
+├── data/
+│   ├── Plant_1_Generation_Data.csv
+│   ├── Plant_1_Weather_Sensor_Data.csv
+│   ├── Plant_2_Generation_Data.csv
+│   └── Plant_2_Weather_Sensor_Data.csv
+├── requirements.txt                  # Python libraries needed
+└── README.md
+How to run the code
+Option A: Google Colab (recommended)
+Click the Open in Colab badge at the top of this README (or open solar_energy_prediction.ipynb and choose Open in Colab).
+In the data-loading cell, make sure YOUR-USERNAME/YOUR-REPO in the git clone line is this repository's address. This downloads the code and the data/ folder into Colab automatically.
+Run all cells: Runtime → Run all. The notebook takes about a minute to run.
+Option B: Run locally
+Clone the repository:
+   git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
+   cd YOUR-REPO
+Install the libraries (Python 3.9+ recommended):
+   pip install -r requirements.txt
+Start Jupyter and open the notebook:
+   jupyter notebook solar_energy_prediction.ipynb
+Skip the cell that runs git clone (the data is already in data/) and run the remaining cells from top to bottom.
+Methodology
+Data collection and cleaning: The four CSV files were loaded and checked for missing values (none found). Because each plant has about 22 inverters reporting at every timestamp, AC power was averaged across inverters to give one value per plant per timestamp. Generation (6,417 records) and weather (6,441 records) data were merged on timestamp and plant ID with an inner join, giving 6,416 records.
+Filtering: Only records with positive irradiation (daytime) were kept, since night-time records have zero power and are trivially easy to predict. This left 3,616 records.
+Feature engineering: PLANT (plant 1 or 2), HOUR (time of day as a decimal) and TEMP_DIFF (module minus ambient temperature).
+Exploratory data analysis: correlation heatmap, power vs. irradiation, and average daily power curve.
+Train/test split: chronological. The first 27 days (15 May – 10 June, 2,862 records) were used for training and the last 7 days (11 – 17 June, 754 records) for testing, so models are evaluated on unseen days.
+Models: Linear Regression (baseline), Decision Tree (max depth 8) and Random Forest (100 trees), all with random_state=42.
+Evaluation: MAE, RMSE and R² on the test set.
+Results
+Model	MAE (kW)	RMSE (kW)	R²
+Random Forest	35.1	77.9	0.935
+Decision Tree	37.5	85.4	0.922
+Linear Regression	98.0	125.8	0.831
+The Random Forest performed best on all three metrics.
+Irradiation is the main driver of solar output (correlation with AC power r = 0.91). Module temperature and temperature difference are also highly correlated with power, but largely because they rise with sunlight.
+Linear Regression performed worst, indicating a non-linear relationship between weather and power.
+Limitations
+Only 34 days from a single season; the test set covers just 7 days.
+No hyperparameter tuning or cross-validation.
+Models use weather measured at the same time as the power output; a real forecasting system would rely on forecast weather.
+Cloud cover and wind speed were not available.
+A few unexplained outages (mainly Plant 2) cause large errors, and a few near-zero-irradiation night-time records remain after filtering.
+Libraries used
 
-# One row per plant per timestamp: average AC power across inverters
-power = gen.groupby(["DATE_TIME", "PLANT_ID"], as_index=False)["AC_POWER"].mean()
-
-# Merge with weather (inner join keeps only timestamps that exist in both)
-weather = weather[["DATE_TIME", "PLANT_ID", "AMBIENT_TEMPERATURE", "MODULE_TEMPERATURE", "IRRADIATION"]]
-data = power.merge(weather, on=["DATE_TIME", "PLANT_ID"], how="inner")
-
-print("Merged dataset shape:", data.shape)
-data.head()
-
-print("Plant-timestamps in generation data:", len(power))
-print("Weather rows:", len(weather))
-print("After merge: ", len(data))
-
-sns.histplot(data["AC_POWER"])
-plt.show()
-
-
-data["PLANT"] = data["PLANT_ID"].map({4135001: 1, 4136001: 2})
-data["HOUR"] = data["DATE_TIME"].dt.hour + data["DATE_TIME"].dt.minute / 60
-data["TEMP_DIFF"] = data["MODULE_TEMPERATURE"] - data["AMBIENT_TEMPERATURE"]
-
-data = data[data["IRRADIATION"] > 0].reset_index(drop=True)
-
-features = ["IRRADIATION", "AMBIENT_TEMPERATURE", "MODULE_TEMPERATURE", "TEMP_DIFF", "HOUR", "PLANT"]
-target = "AC_POWER"
-
-data[features + [target]].describe().round(2)
-
-data.shape
-
-
-fig, axes = plt.subplots(3, 1, figsize=(15, 20))
-
-sns.heatmap(data[features + [target]].corr(), annot=True, fmt=".2f", cmap="coolwarm", ax=axes[0])
-axes[0].set_title("Correlation heatmap")
-
-sns.scatterplot(data=data, x="IRRADIATION", y="AC_POWER", hue="PLANT", alpha=0.4, ax=axes[1])
-axes[1].set_title("AC power vs. irradiation")
-
-sns.lineplot(data=data, x="HOUR", y="AC_POWER", ax=axes[2])
-axes[2].set_title("Average AC power by hour of day")
-
-plt.tight_layout()
-plt.show()
-
-days = np.sort(data["DATE_TIME"].dt.normalize().unique())
-cutoff = days[int(len(days) * 0.8)]
-
-train = data[data["DATE_TIME"] < cutoff]
-test = data[data["DATE_TIME"] >= cutoff]
-
-X_train, y_train = train[features], train[target]
-X_test, y_test = test[features], test[target]
-
-print(f"Train: {len(train)} rows | Test: {len(test)} rows | Test starts on {str(cutoff)[:10]}")
-
-
-models = {
-    "Linear Regression": LinearRegression(),
-    "Decision Tree": DecisionTreeRegressor(max_depth=8, random_state=42),
-    "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42),
-}
-
-rows, predictions = [], {}
-for name, model in models.items():
-    model.fit(X_train, y_train)
-    pred = model.predict(X_test)
-    predictions[name] = pred
-    rows.append({
-        "Model": name,
-        "MAE": mean_absolute_error(y_test, pred),
-        "RMSE": np.sqrt(mean_squared_error(y_test, pred)),
-        "R2": r2_score(y_test, pred),
-    })
-
-results = pd.DataFrame(rows).set_index("Model").sort_values("RMSE").round(3)
-results
-
-
-best_name = results.index[0]
-best_model = models[best_name]
-
-fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-
-results["RMSE"].plot(kind="bar", ax=axes[0])
-axes[0].set_title("Model comparison (lower RMSE is better)")
-
-axes[1].scatter(y_test, predictions[best_name],s=12)
-axes[1].plot([0, y_test.max()], [0, y_test.max()], color="red")
-axes[1].set_xlabel("Actual AC power")
-axes[1].set_ylabel("Predicted AC power")
-axes[1].set_title(f"{best_name}: predicted vs. actual")
-
-corrs= data[features + [target]].corr()[target].drop(target)
-corrs.plot(kind="bar", ax=axes[2])
-axes[2].set_title("Correlation with AC power")
-
-plt.tight_layout()
-plt.show()
-
-best = results.loc[best_name]
-top_feature = corrs.abs().idxmax()
-
-print(
-    "Solar power output fluctuates with weather conditions, complicating grid planning and increasing "+"\n"+
-    "reliance on fossil-fuel backup generation. This project builds a supervised regression pipeline that "+"\n"+
-    "predicts solar power generation from weather measurements, using 34 days of 15-minute interval data "+"\n"+
-    "from two grid-connected solar plants in India. Generation and weather records were merged, cleaned, "+"\n"+
-    f"and enriched with engineered features, then used to train and compare {len(models)} regression models "+"\n"+
-    f"evaluated with MAE, RMSE, and R². The best-performing model was {best_name} "+"\n"+
-    f"(MAE = {best['MAE']:.2f} kW, RMSE = {best['RMSE']:.2f} kW, R² = {best['R2']:.3f}), "+"\n"+
-    f"and the main driver of solar output was {top_feature}. The results illustrate how better forecasting "+"\n"+
-    "can support renewable-energy integration and reduce dependence on backup fossil-fuel generation."+"\n"
-)
+pandas, numpy, seaborn, matplotlib and scikit-learn.
